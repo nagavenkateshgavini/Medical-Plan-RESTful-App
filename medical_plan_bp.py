@@ -48,7 +48,7 @@ def get_plan(object_id):
         return jsonify({'error': 'Service Unavailable', 'details': str(e)}), 503
 
 
-@bp.route('/v1/plan/<object_id>', methods=['PATCH'])
+@bp.route('/v1/plan/<object_id>', methods=['PUT'])
 def update_plan(object_id):
     try:
         # Parse the request JSON into a PlanSchema object
@@ -75,6 +75,8 @@ def update_plan(object_id):
             return jsonify({'error': 'If-Match header is missing'}), 400
     except ValidationError as e:
         return jsonify(e.errors()), 400
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 404
     except (ConnectionError, TimeoutError) as e:
         return jsonify({'error': 'Service Unavailable', 'details': str(e)}), 503
 

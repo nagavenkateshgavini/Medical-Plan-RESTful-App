@@ -69,7 +69,7 @@ def update_plan(plan: PlanSchema, etag: str):
                 # No change in data, return the existing ETag
                 return etag
         else:
-            raise ValueError("Plan not found or ETag mismatch")
+            raise ValueError("ETag mismatch")
     except (ConnectionError, TimeoutError) as e:
         # Handle the exception (logging, retrying, etc.)
         raise e
