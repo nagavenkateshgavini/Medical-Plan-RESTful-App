@@ -22,3 +22,11 @@ Project to demonstrate Indexing of Structured JSON objects
 - DELETE `/plan/{id}` - Deletes an existing plan provided by the id.
 
 ## Architecture Diagram:
+
+## Run Details on Mac:
+1. `python3 -m venv venv`
+2. `source venv/bin/activate`
+3. `pip install -r requirements.txt`
+4. `python app.py`
+5. `brew install redis`
+6. `brew services start redis`
