@@ -73,3 +73,17 @@ def update_plan(plan: PlanSchema, etag: str):
     except (ConnectionError, TimeoutError) as e:
         # Handle the exception (logging, retrying, etc.)
         raise e
+
+
+def get_all_plans():
+    try:
+        keys = redis_client.keys("plan:*")
+        plans = []
+        for key in keys:
+            plan_data = redis_client.get(key)
+            if plan_data:
+                plans.append(PlanSchema.parse_raw(plan_data))
+        return plans
+    except (ConnectionError, TimeoutError) as e:
+        # Handle the exception (logging, retrying, etc.)
+        raise e

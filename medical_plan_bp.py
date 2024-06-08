@@ -16,7 +16,7 @@ def create_plan():
         etag = redis_service.save_plan(plan_schema)
 
         # Return the plan with ETag in the response headers
-        return jsonify(plan_schema.dict()), 201, {'ETag': etag}
+        return jsonify(plan_schema.dict()), 201
 
     except ValidationError as e:
         return jsonify(e.errors()), 400
@@ -90,5 +90,14 @@ def delete_plan(object_id):
             return jsonify({'message': 'Plan deleted successfully'}), 200
         else:
             return jsonify({'error': 'Plan not found'}), 404
+    except (ConnectionError, TimeoutError) as e:
+        return jsonify({'error': 'Service Unavailable', 'details': str(e)}), 503
+
+
+@bp.route('/v1/plans', methods=['GET'])
+def get_all_plans():
+    try:
+        plans = redis_service.get_all_plans()
+        return jsonify([plan.dict() for plan in plans]), 200
     except (ConnectionError, TimeoutError) as e:
         return jsonify({'error': 'Service Unavailable', 'details': str(e)}), 503
