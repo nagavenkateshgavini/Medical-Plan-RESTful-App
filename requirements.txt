@@ -1,3 +1,6 @@
+# local package
+-e .
+
 annotated-types==0.7.0
 async-timeout==4.0.3
 blinker==1.8.2

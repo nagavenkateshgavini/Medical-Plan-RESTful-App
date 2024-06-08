@@ -1,26 +1,24 @@
-from flask import Flask, request, jsonify
-from pydantic import ValidationError
+from flask import Flask
 
-from data_models.medical_plan import PlanSchema
+from config import Config
 
-app = Flask(__name__)
-
-
-@app.route("/")
-def hello_world():
-    return "<p>Hello, World!</p>"
+from extensions import redis_client
 
 
-@app.route("/v1/plan", methods=["POST"])
-def create_plan():
-    try:
-        # Parse and validate request JSON using Pydantic
-        plan_schema = PlanSchema(**request.json)
-        return jsonify(plan_schema.dict()), 200
-    except ValidationError as e:
-        # Return validation errors
-        return jsonify(e.errors()), 400
+def create_app():
+    app = Flask(__name__)
+    app.config_class(Config)
+
+    redis_client.init_app(app)
+
+    from medical_plan_bp import bp as api_bp
+    app.register_blueprint(api_bp)
+
+    return app
 
 
-if __name__ == "__main__":
-    app.run()
+app = create_app()
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
