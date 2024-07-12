@@ -12,6 +12,10 @@ Project to demonstrate Indexing of Structured JSON objects
 - Pydantic for Schema Validations
 - REST Framework
 
+## Prerequisites:
+Export Google Client ID, for JWT ID token authentication with Google IDP
+  - `export GOOGLE_CLIENT_ID="rand-id.apps.googleusercontent.com"`
+
 ## API Endpoints
 - POST `/v1/plan` - Creates a new plan provided in the request body.
   - If the request is successful, a valid `Etag` for the object is returned in the `ETag` HTTP Response Header.
@@ -29,7 +33,7 @@ Project to demonstrate Indexing of Structured JSON objects
   - The Controller updates only if there's a change in the client view of the response.
 
 ## Architecture Diagram:
-![architecture.jpg](..%2Farchitecture.jpg)
+![architecture.jpg](./data/architecture.jpg)
 
 
 ## Run Details on Mac:
