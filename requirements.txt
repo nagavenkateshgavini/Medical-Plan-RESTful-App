@@ -1,19 +1,31 @@
-# local package
--e .
-
 annotated-types==0.7.0
 async-timeout==4.0.3
 blinker==1.8.2
+cachetools==5.3.3
+certifi==2024.7.4
+cffi==1.16.0
+charset-normalizer==3.3.2
 click==8.1.7
+cryptography==42.0.8
 Flask==3.0.3
 flask-redis==0.4.0
+google-auth==2.32.0
+idna==3.7
 importlib_metadata==7.1.0
 itsdangerous==2.2.0
 Jinja2==3.1.4
+jwt==1.3.1
 MarkupSafe==2.1.5
+-e git+ssh://git@github.com/nagavenkateshgavini/medical_plan_restfull_app.git@c89f798ee7dbbe527f07587de0ee34e0dc5d4d4b#egg=medical_plan_app
+pyasn1==0.6.0
+pyasn1_modules==0.4.0
+pycparser==2.22
 pydantic==2.7.3
 pydantic_core==2.18.4
 redis==5.0.5
+requests==2.32.3
+rsa==4.9
 typing_extensions==4.12.2
+urllib3==2.2.2
 Werkzeug==3.0.3
 zipp==3.19.2

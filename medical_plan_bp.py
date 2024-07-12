@@ -1,21 +1,32 @@
 from flask import Blueprint, request, jsonify
-from pydantic import ValidationError
+from pydantic import ValidationError, BaseModel
 
-from data_models.medical_plan import PlanSchema
+from data_models.medical_plan import PlanSchema, PatchPlanSchema
 from services import redis_service
 
-bp = Blueprint('api', __name__)
+from extensions import google_auth
+
+api_bp = Blueprint('api', __name__)
 
 
-@bp.route('/v1/plan', methods=['POST'])
+@api_bp.before_request
+def before_request_func():
+    auth_header = request.headers.get('Authorization')
+    if not auth_header:
+        return jsonify({"message": "Token is missing!"}), 401
+
+    token = auth_header.split(" ")[1]
+
+    decoded_token = google_auth.verify_token(token)
+    if not decoded_token:
+        return jsonify({"message": "Token is invalid!"}), 401
+
+
+@api_bp.route('/v1/plan', methods=['POST'])
 def create_plan():
     try:
         plan_schema = PlanSchema(**request.json)
-
-        # Save the plan to Redis and get the ETag
-        etag = redis_service.save_plan(plan_schema)
-
-        # Return the plan with ETag in the response headers
+        redis_service.save_plan(plan_schema)
         return jsonify(plan_schema.dict()), 201
 
     except ValidationError as e:
@@ -26,8 +37,9 @@ def create_plan():
         return jsonify({'error': 'Service Unavailable', 'details': str(e)}), 503
 
 
-@bp.route('/v1/plan/<object_id>', methods=['GET'])
+@api_bp.route('/v1/plan/<object_id>', methods=['GET'])
 def get_plan(object_id):
+    import pdb;pdb.set_trace()
     try:
         plan, etag = redis_service.get_plan(object_id)
 
@@ -48,7 +60,7 @@ def get_plan(object_id):
         return jsonify({'error': 'Service Unavailable', 'details': str(e)}), 503
 
 
-@bp.route('/v1/plan/<object_id>', methods=['PUT'])
+@api_bp.route('/v1/plan/<object_id>', methods=['PUT'])
 def update_plan(object_id):
     try:
         # Parse the request JSON into a PlanSchema object
@@ -81,7 +93,7 @@ def update_plan(object_id):
         return jsonify({'error': 'Service Unavailable', 'details': str(e)}), 503
 
 
-@bp.route('/v1/plan/<object_id>', methods=['DELETE'])
+@api_bp.route('/v1/plan/<object_id>', methods=['DELETE'])
 def delete_plan(object_id):
     try:
         result = redis_service.delete_plan(object_id)
@@ -94,10 +106,34 @@ def delete_plan(object_id):
         return jsonify({'error': 'Service Unavailable', 'details': str(e)}), 503
 
 
-@bp.route('/v1/plans', methods=['GET'])
+@api_bp.route('/v1/plans', methods=['GET'])
 def get_all_plans():
     try:
         plans = redis_service.get_all_plans()
         return jsonify([plan.dict() for plan in plans]), 200
     except (ConnectionError, TimeoutError) as e:
         return jsonify({'error': 'Service Unavailable', 'details': str(e)}), 503
+
+
+@api_bp.route('/v1/patch/<string:key>', methods=['PATCH'])
+def patch_item(key):
+    try:
+        patch_data = request.json
+        new_plan = PatchPlanSchema(**patch_data)
+
+        current_plan_data, _ = redis_service.get_plan(key)
+        if not current_plan_data:
+            return jsonify({"message": "Item not found"}), 404
+
+        new_etag = redis_service.patch_item(new_plan, request.headers.get('If-Match'), current_plan_data)
+        if new_etag:
+            response = jsonify({"message": "Item updated"})
+            response.headers['ETag'] = new_etag
+            return response
+        else:
+            jsonify({"message": "Item not updated"})
+    except ValidationError as e:
+        return jsonify(e.errors()), 400
+
+    except ValueError as e:
+        return jsonify({"message": "ETag does not match"}), 412

@@ -11,7 +11,7 @@ def create_app():
 
     redis_client.init_app(app)
 
-    from medical_plan_bp import bp as api_bp
+    from medical_plan_bp import api_bp
     app.register_blueprint(api_bp)
 
     return app

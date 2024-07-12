@@ -1,7 +1,8 @@
+import json
 from hashlib import md5
 
 from extensions import redis_client
-from data_models.medical_plan import PlanSchema
+from data_models.medical_plan import PlanSchema, PatchPlanSchema
 
 
 def save_plan(plan: PlanSchema):
@@ -15,10 +16,6 @@ def save_plan(plan: PlanSchema):
 
         # Set the plan data in Redis
         redis_client.set(record_key, plan_data)
-
-        # Calculate and return the ETag
-        etag = md5(plan_data.encode()).hexdigest()
-        return etag
     except (ConnectionError, TimeoutError) as e:
         # Handle the exception (logging, retrying, etc.)
         raise e
@@ -70,6 +67,64 @@ def update_plan(plan: PlanSchema, etag: str):
                 return etag
         else:
             raise ValueError("ETag mismatch")
+    except (ConnectionError, TimeoutError) as e:
+        # Handle the exception (logging, retrying, etc.)
+        raise e
+
+
+def merge_records(existing_record, new_record):
+    # Create a deep copy of the existing record to avoid modifying it directly
+    merged_record = existing_record.copy()
+
+    # Merge planCostShares from new_record to existing_record
+    if new_record.get('planCostShares'):
+        for key, value in new_record['planCostShares'].items():
+            if value is not None:  # Ignore None values
+                merged_record['planCostShares'][key] = value
+
+    # Merge linkedPlanServices from new_record to existing_record
+    if new_record.get('linkedPlanServices'):
+        merged_record['linkedPlanServices'] = []
+        for item in new_record['linkedPlanServices']:
+            if item is not None:  # Ignore None items
+                merged_item = {}
+                if item.get('linkedService'):
+                    merged_item['linkedService'] = item['linkedService']
+                if item.get('planserviceCostShares'):
+                    merged_item['planserviceCostShares'] = item['planserviceCostShares']
+                if item.get('objectId'):
+                    merged_item['objectId'] = item['objectId']
+                if item.get('objectType'):
+                    merged_item['objectType'] = item['objectType']
+                merged_record['linkedPlanServices'].append(merged_item)
+
+    # Merge objectId and objectType from new_record to existing_record
+    if new_record.get('objectId'):
+        merged_record['objectId'] = new_record['objectId']
+    if new_record.get('objectType'):
+        merged_record['objectType'] = new_record['objectType']
+
+    # Merge planType from new_record to existing_record
+    if new_record.get('planType'):
+        merged_record['planType'] = new_record['planType']
+
+    return merged_record
+
+
+def patch_item(new_plan: PatchPlanSchema, etag: str, current_plan: PlanSchema):
+    try:
+        record_key = f"plan:{new_plan.objectId}"
+        current_plan = current_plan.json()
+        current_etag = md5(current_plan.encode('utf-8')).hexdigest()
+        if etag != current_etag:
+            raise ValueError("ETag does not match")
+
+        current_plan = json.loads(current_plan)
+        merged_record = json.dumps(merge_records(current_plan, new_plan.dict()))
+        redis_client.set(record_key, merged_record)
+
+        updated_etag = md5(merged_record.encode('utf-8')).hexdigest()
+        return updated_etag
     except (ConnectionError, TimeoutError) as e:
         # Handle the exception (logging, retrying, etc.)
         raise e
