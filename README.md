@@ -37,9 +37,9 @@ Export Google Client ID, for JWT ID token authentication with Google IDP
 
 
 ## Run Details on Mac:
-1. `python3 -m venv venv`
-2. `source venv/bin/activate`
-3. `pip install -r requirements.txt`
-4. `python app.py`
-5. `brew install redis`
-6. `brew services start redis`
+1. `brew install redis`
+2. `brew services start redis`
+3. `python3 -m venv venv`
+4. `source venv/bin/activate`
+5. `pip install -r requirements.txt`
+6. `python app.py`
