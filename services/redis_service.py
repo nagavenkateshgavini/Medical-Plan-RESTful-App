@@ -28,7 +28,7 @@ def get_plan(object_id: str):
         if plan_data:
             # Calculate ETag
             etag = md5(plan_data).hexdigest()
-            return PlanSchema.parse_raw(plan_data), etag
+            return PatchPlanSchema.parse_raw(plan_data), etag
         return None, None
     except (ConnectionError, TimeoutError) as e:
         # Handle the exception (logging, retrying, etc.)
@@ -135,7 +135,7 @@ def get_all_plans():
         for key in keys:
             plan_data = redis_client.get(key)
             if plan_data:
-                plans.append(PlanSchema.parse_raw(plan_data))
+                plans.append(PatchPlanSchema.parse_raw(plan_data))
         return plans
     except (ConnectionError, TimeoutError) as e:
         # Handle the exception (logging, retrying, etc.)

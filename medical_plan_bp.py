@@ -9,6 +9,11 @@ from extensions import google_auth
 api_bp = Blueprint('api', __name__)
 
 
+@api_bp.route('/health_check', methods=['GET'])
+def health_check():
+    return "Hello"
+
+
 @api_bp.before_request
 def before_request_func():
     auth_header = request.headers.get('Authorization')
