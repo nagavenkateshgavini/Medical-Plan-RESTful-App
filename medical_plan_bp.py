@@ -39,7 +39,6 @@ def create_plan():
 
 @api_bp.route('/v1/plan/<object_id>', methods=['GET'])
 def get_plan(object_id):
-    import pdb;pdb.set_trace()
     try:
         plan, etag = redis_service.get_plan(object_id)
 
@@ -121,11 +120,14 @@ def patch_item(key):
         patch_data = request.json
         new_plan = PatchPlanSchema(**patch_data)
 
-        current_plan_data, _ = redis_service.get_plan(key)
+        current_plan_data, current_etag = redis_service.get_plan(key)
         if not current_plan_data:
             return jsonify({"message": "Item not found"}), 404
 
-        new_etag = redis_service.patch_item(new_plan, request.headers.get('If-Match'), current_plan_data)
+        if current_etag != request.headers.get('If-Match'):
+            return jsonify({"message": "ETag does not match"}), 412
+
+        new_etag = redis_service.patch_item(new_plan, current_plan_data)
         if new_etag:
             response = jsonify({"message": "Item updated"})
             response.headers['ETag'] = new_etag

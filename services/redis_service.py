@@ -84,23 +84,25 @@ def merge_records(existing_record, new_record):
 
     # Merge linkedPlanServices from new_record to existing_record
     if new_record.get('linkedPlanServices'):
-        merged_record['linkedPlanServices'] = []
+        if 'linkedPlanServices' not in merged_record:
+            merged_record['linkedPlanServices'] = []
+
+        existing_services = {item['objectId']: item for item in merged_record['linkedPlanServices']}
         for item in new_record['linkedPlanServices']:
-            if item is not None:  # Ignore None items
-                merged_item = {}
-                if item.get('linkedService'):
-                    merged_item['linkedService'] = item['linkedService']
-                if item.get('planserviceCostShares'):
-                    merged_item['planserviceCostShares'] = item['planserviceCostShares']
-                if item.get('objectId'):
-                    merged_item['objectId'] = item['objectId']
-                if item.get('objectType'):
-                    merged_item['objectType'] = item['objectType']
-                merged_record['linkedPlanServices'].append(merged_item)
+            if item.get('objectId') in existing_services:
+                # Merge the existing service
+                existing_service = existing_services[item['objectId']]
+                for key, value in item.items():
+                    if key == 'linkedService' or key == 'planserviceCostShares':
+                        if value:
+                            existing_service[key].update(value)
+                    elif value is not None:
+                        existing_service[key] = value
+            else:
+                # Append new service
+                merged_record['linkedPlanServices'].append(item)
 
     # Merge objectId and objectType from new_record to existing_record
-    if new_record.get('objectId'):
-        merged_record['objectId'] = new_record['objectId']
     if new_record.get('objectType'):
         merged_record['objectType'] = new_record['objectType']
 
@@ -111,15 +113,11 @@ def merge_records(existing_record, new_record):
     return merged_record
 
 
-def patch_item(new_plan: PatchPlanSchema, etag: str, current_plan: PlanSchema):
+def patch_item(new_plan: PatchPlanSchema, current_plan: PlanSchema):
     try:
         record_key = f"plan:{new_plan.objectId}"
-        current_plan = current_plan.json()
-        current_etag = md5(current_plan.encode('utf-8')).hexdigest()
-        if etag != current_etag:
-            raise ValueError("ETag does not match")
+        current_plan = current_plan.dict()
 
-        current_plan = json.loads(current_plan)
         merged_record = json.dumps(merge_records(current_plan, new_plan.dict()))
         redis_client.set(record_key, merged_record)
 
