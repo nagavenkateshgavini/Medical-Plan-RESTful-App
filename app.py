@@ -10,7 +10,7 @@ from data_models.es_mappings import INDEX_MAPPING, INDEX_NAME
 from extensions import redis_client
 
 es = Elasticsearch(
-    [{'host': 'localhost', 'port': 9200, 'scheme': 'http'}],
+    [{'host': config.Config.ES_HOST, 'port': 9200, 'scheme': 'http'}],
     basic_auth=(config.Config.ES_USER, config.Config.ES_PASSWORD)
 )
 
