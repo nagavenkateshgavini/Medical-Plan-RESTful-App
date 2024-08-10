@@ -1,10 +1,12 @@
+import json
+
 from flask import Blueprint, request, jsonify
-from pydantic import ValidationError, BaseModel
+from pydantic import ValidationError
 
 from data_models.medical_plan import PlanSchema, PatchPlanSchema
 from services import redis_service
 
-from extensions import google_auth
+from extensions import google_auth, channel
 
 api_bp = Blueprint('api', __name__)
 
@@ -31,8 +33,13 @@ def before_request_func():
 def create_plan():
     try:
         plan_schema = PlanSchema(**request.json)
-        redis_service.save_plan(plan_schema)
-        return jsonify(plan_schema.dict()), 201
+        # Publish to RabbitMQ
+        req = {"action": "create", "document": plan_schema.dict()}
+        channel.basic_publish(exchange='',
+                              routing_key='medical_plan',
+                              body=json.dumps(req))
+
+        return jsonify({"message": "Document queued for processing"}), 202
 
     except ValidationError as e:
         return jsonify(e.errors()), 400
@@ -64,48 +71,20 @@ def get_plan(object_id):
         return jsonify({'error': 'Service Unavailable', 'details': str(e)}), 503
 
 
-@api_bp.route('/v1/plan/<object_id>', methods=['PUT'])
-def update_plan(object_id):
-    try:
-        # Parse the request JSON into a PlanSchema object
-        plan_data = request.json
-        plan_schema = PlanSchema(**plan_data)
-
-        # Get the provided ETag from the request headers
-        etag = request.headers.get('If-Match')
-
-        # Update the plan if the ETag matches
-        if etag:
-            new_etag = redis_service.update_plan(plan_schema, etag)
-            if new_etag:
-                if new_etag != etag:
-                    # Plan updated successfully
-                    return jsonify({'message': 'Plan updated successfully'}), 200, {'ETag': new_etag}
-                else:
-                    # Plan was not changed, return Not Modified
-                    return jsonify({'message': 'Plan not modified'}), 304, {'ETag': new_etag}
-            else:
-                # Precondition failed, ETag mismatch
-                return jsonify({'error': 'Precondition Failed'}), 412
-        else:
-            return jsonify({'error': 'If-Match header is missing'}), 400
-    except ValidationError as e:
-        return jsonify(e.errors()), 400
-    except ValueError as e:
-        return jsonify({'error': str(e)}), 404
-    except (ConnectionError, TimeoutError) as e:
-        return jsonify({'error': 'Service Unavailable', 'details': str(e)}), 503
-
-
 @api_bp.route('/v1/plan/<object_id>', methods=['DELETE'])
 def delete_plan(object_id):
     try:
-        result = redis_service.delete_plan(object_id)
+        req = {"action": "delete", "doc_id": object_id}
+        channel.basic_publish(exchange='',
+                              routing_key='medical_plan',
+                              body=json.dumps(req))
 
-        if result:
-            return jsonify({'message': 'Plan deleted successfully'}), 200
-        else:
-            return jsonify({'error': 'Plan not found'}), 404
+        return jsonify({"message": "request queued for processing"}), 200
+
+    except ValidationError as e:
+        return jsonify(e.errors()), 400
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 409
     except (ConnectionError, TimeoutError) as e:
         return jsonify({'error': 'Service Unavailable', 'details': str(e)}), 503
 
@@ -122,9 +101,6 @@ def get_all_plans():
 @api_bp.route('/v1/patch/<string:key>', methods=['PATCH'])
 def patch_item(key):
     try:
-        patch_data = request.json
-        new_plan = PatchPlanSchema(**patch_data)
-
         current_plan_data, current_etag = redis_service.get_plan(key)
         if not current_plan_data:
             return jsonify({"message": "Item not found"}), 404
@@ -132,15 +108,19 @@ def patch_item(key):
         if current_etag != request.headers.get('If-Match'):
             return jsonify({"message": "ETag does not match"}), 412
 
-        new_etag = redis_service.patch_item(new_plan, current_plan_data)
-        if new_etag:
-            response = jsonify({"message": "Item updated"})
-            response.headers['ETag'] = new_etag
-            return response
-        else:
-            jsonify({"message": "Item not updated"})
+        patch_data = request.json
+        new_plan = PatchPlanSchema(**patch_data)
+
+        req = {"action": "patch", "document": new_plan.dict()}
+        channel.basic_publish(exchange='',
+                              routing_key='medical_plan',
+                              body=json.dumps(req))
+
+        return jsonify({"message": "request queued for processing"}), 200
+
     except ValidationError as e:
         return jsonify(e.errors()), 400
-
     except ValueError as e:
-        return jsonify({"message": "ETag does not match"}), 412
+        return jsonify({'error': str(e)}), 409
+    except (ConnectionError, TimeoutError) as e:
+        return jsonify({'error': 'Service Unavailable', 'details': str(e)}), 503

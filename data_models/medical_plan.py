@@ -1,18 +1,18 @@
 from datetime import datetime
 from typing import List, Optional
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, Field
 
 
 class PlanCostShares(BaseModel):
     deductible: int
-    _org: str
+    org: str
     copay: int
     objectId: str
     objectType: str
 
 
 class LinkedService(BaseModel):
-    _org: str
+    org: str
     objectId: str
     objectType: str
     name: str
@@ -20,7 +20,7 @@ class LinkedService(BaseModel):
 
 class PlanserviceCostShares(BaseModel):
     deductible: int
-    _org: str
+    org: str
     copay: int
     objectId: str
     objectType: str
@@ -29,7 +29,7 @@ class PlanserviceCostShares(BaseModel):
 class LinkedPlanServiceItem(BaseModel):
     linkedService: LinkedService
     planserviceCostShares: PlanserviceCostShares
-    _org: str
+    org: str
     objectId: str
     objectType: str
 
@@ -37,11 +37,11 @@ class LinkedPlanServiceItem(BaseModel):
 class PlanSchema(BaseModel):
     planCostShares: PlanCostShares
     linkedPlanServices: List[LinkedPlanServiceItem]
-    _org: str
+    org: str
     objectId: str
     objectType: str
     planType: str
-    # creationDate: Optional[datetime]
+    creationDate: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
 
     class Config:
         title = "The Plan Schema"
@@ -86,14 +86,14 @@ class PlanSchema(BaseModel):
 
 class PatchPlanCostShares(BaseModel):
     deductible: Optional[int] = None
-    _org: Optional[str] = None
+    org: Optional[str] = None
     copay: Optional[int] = None
     objectId: str
     objectType: Optional[str] = None
 
 
 class PatchLinkedService(BaseModel):
-    _org: Optional[str] = None
+    org: Optional[str] = None
     objectId: str
     objectType: Optional[str] = None
     name: Optional[str] = None
@@ -101,7 +101,7 @@ class PatchLinkedService(BaseModel):
 
 class PatchPlanserviceCostShares(BaseModel):
     deductible: Optional[int] = None
-    _org: Optional[str] = None
+    org: Optional[str] = None
     copay: Optional[int] = None
     objectId: str
     objectType: Optional[str] = None
@@ -110,7 +110,7 @@ class PatchPlanserviceCostShares(BaseModel):
 class PatchLinkedPlanServiceItem(BaseModel):
     linkedService: Optional[PatchLinkedService] = None
     planserviceCostShares: Optional[PatchPlanserviceCostShares] = None
-    _org: Optional[str] = None
+    org: Optional[str] = None
     objectId: Optional[str] = None
     objectType: Optional[str] = None
 
@@ -118,11 +118,11 @@ class PatchLinkedPlanServiceItem(BaseModel):
 class PatchPlanSchema(BaseModel):
     planCostShares: Optional[PatchPlanCostShares] = None
     linkedPlanServices: Optional[List[PatchLinkedPlanServiceItem]] = None
-    _org: Optional[str] = None
+    org: Optional[str] = None
     objectId: str
     objectType: Optional[str] = None
     planType: Optional[str] = None
-    # creationDate: Optional[datetime]
+    creationDate: Optional[datetime] = None
 
     @classmethod
     def validate_linkedPlanServices(cls, v):

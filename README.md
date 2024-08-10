@@ -11,18 +11,26 @@ Project to demonstrate Indexing of Structured JSON objects
 - Google IDP for OAUTH 2.0 Authentication
 - Pydantic for Schema Validations
 - REST Framework
+- Postman
 
 ## Prerequisites:
-Export Google Client ID, for JWT ID token authentication with Google IDP
-  - `export GOOGLE_CLIENT_ID="rand-id.apps.googleusercontent.com"`
+  ```bash
+  export GOOGLE_CLIENT_ID="rand-id.apps.googleusercontent.com"
+  export RABBITMQ_HOST="localhost"
+  export RABBITMQ_PORT="5672"
+  export RABBITMQ_PASSWORD="guest"
+  export RABBITMQ_USER="guest"
+  export ES_PASSWORD="test@123"
+  export ES_USER="elastic"
+  export ES_HOST="localhost"
+  export ES_PORT=9200
+  ```
+
+
 
 ## API Endpoints
 - POST `/v1/plan` - Creates a new plan provided in the request body.
   - If the request is successful, a valid `Etag` for the object is returned in the `ETag` HTTP Response Header.
-- PUT `/v1/plan/{id}` - Replaces an existing plan provided by the id.
-  - A valid Etag for the object should also be provided in the `If-Match` HTTP Request Header.
-  - The validator passes if the specified `ETag` matches that of the target resource.
-  - The Controller updates only if there's a change in the client view of the response.
 - GET `/v1/plan/{id}` - Fetches an existing plan provided by the id.
   - An Etag for the object can be provided in the If-None-Match HTTP Request Header.
   - Returns response only if data in db doesn't matches with the `Etag` provided in headers.
@@ -39,7 +47,12 @@ Export Google Client ID, for JWT ID token authentication with Google IDP
 ## Run Details on Mac:
 1. `brew install redis`
 2. `brew services start redis`
-3. `python3 -m venv venv`
-4. `source venv/bin/activate`
-5. `pip install -r requirements.txt`
-6. `python app.py`
+3. `brew install rabbitmq`
+4. `Run ElasticSearch & kibana locally in Docker` - https://www.elastic.co/guide/en/elasticsearch/reference/current/run-elasticsearch-locally.html
+5. `python3 -m venv venv`
+6. `source venv/bin/activate`
+7. `pip install -r requirements.txt`
+8. `python app.py`
+
+## Useful resources:
+- https://blog.mimacom.com/parent-child-elasticsearch/
