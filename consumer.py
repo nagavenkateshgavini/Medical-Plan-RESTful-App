@@ -229,16 +229,7 @@ class DeleteCommand(Command):
         doc_id = self.message['doc_id']
         redis_key = f"plan:{doc_id}"
 
-        try:
-            # Delete parent document from Elasticsearch if it exists
-            if es.exists(index='plans', id=doc_id):
-                es.delete(index='plans', id=doc_id)
-                print(f"Parent document {doc_id} deleted from Elasticsearch.")
-            else:
-                print(f"Parent document {doc_id} does not exist in Elasticsearch.")
-        except Exception as e:
-            print(f"Failed to delete parent document {doc_id} from Elasticsearch: {e}")
-
+        print("Check for childs...")
         try:
             # Delete child documents of the parent (linkedPlanServices)
             query_linked_plan_services = {
@@ -247,7 +238,7 @@ class DeleteCommand(Command):
                         "parent_type": "plan",
                         "query": {
                             "term": {
-                                "_id": doc_id
+                                "objectId": doc_id
                             }
                         }
                     }
@@ -265,7 +256,7 @@ class DeleteCommand(Command):
                             "parent_type": "linkedPlanServices",
                             "query": {
                                 "term": {
-                                    "_id": linked_service_id
+                                    "objectId": linked_service_id
                                 }
                             }
                         }
@@ -290,15 +281,25 @@ class DeleteCommand(Command):
                 except Exception as e:
                     print(f"Failed to delete linkedPlanServices document {linked_service_id} from Elasticsearch: {e}")
 
+            try:
+                # Delete parent document from Elasticsearch if it exists
+                if es.exists(index='plans', id=doc_id):
+                    es.delete(index='plans', id=doc_id)
+                    print(f"Parent document {doc_id} deleted from Elasticsearch.")
+                else:
+                    print(f"Parent document {doc_id} does not exist in Elasticsearch.")
+            except Exception as e:
+                print(f"Failed to delete parent document {doc_id} from Elasticsearch: {e}")
+
+            # Delete parent document from Redis if it exists
+            if redis_client.exists(redis_key):
+                redis_client.delete(redis_key)
+                print(f"Parent document {doc_id} deleted from Redis.")
+            else:
+                print(f"Parent document {redis_key} does not exist in Redis.")
+
         except Exception as e:
             print(f"Failed to query or delete child documents from Elasticsearch: {e}")
-
-        # Delete parent document from Redis if it exists
-        if redis_client.exists(redis_key):
-            redis_client.delete(redis_key)
-            print(f"Parent document {doc_id} deleted from Redis.")
-        else:
-            print(f"Parent document {redis_key} does not exist in Redis.")
 
 
 # Invoker class
