@@ -26,7 +26,7 @@ Project to demonstrate Indexing of Structured JSON objects
   export ES_PORT=9200
   ```
 
-
+To generate Google Cliend Id and Secret, first needs to setup google consent from google console. Watch this video tutorial: https://www.youtube.com/watch?v=tgO_ADSvY1I
 
 ## API Endpoints
 - POST `/v1/plan` - Creates a new plan provided in the request body.
