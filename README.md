@@ -53,6 +53,7 @@ Project to demonstrate Indexing of Structured JSON objects
 6. `source venv/bin/activate`
 7. `pip install -r requirements.txt`
 8. `python app.py`
+9. `python consumer.py`
 
 ## Useful resources:
 - https://blog.mimacom.com/parent-child-elasticsearch/
