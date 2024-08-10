@@ -28,6 +28,8 @@ Project to demonstrate Indexing of Structured JSON objects
 
 To generate Google Cliend Id and Secret, first needs to setup google consent from google console. Watch this video tutorial: https://www.youtube.com/watch?v=tgO_ADSvY1I
 
+Tip: Env variables will be lost once you close the terminal, to fix that. Add the above commands to your `~/.zshrc` or `~/.bashrc`
+
 ## API Endpoints
 - POST `/v1/plan` - Creates a new plan provided in the request body.
   - If the request is successful, a valid `Etag` for the object is returned in the `ETag` HTTP Response Header.
