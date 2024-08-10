@@ -3,6 +3,7 @@ import os
 from flask import Flask
 from elasticsearch import Elasticsearch, exceptions
 
+import config
 from config import Config
 from data_models.es_mappings import INDEX_MAPPING, INDEX_NAME
 
@@ -10,7 +11,7 @@ from extensions import redis_client
 
 es = Elasticsearch(
     [{'host': 'localhost', 'port': 9200, 'scheme': 'http'}],
-    basic_auth=('elastic', 'Venkat@123')
+    basic_auth=(config.Config.ES_USER, config.Config.ES_PASSWORD)
 )
 
 
