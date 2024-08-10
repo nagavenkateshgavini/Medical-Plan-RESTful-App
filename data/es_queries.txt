@@ -1,0 +1,37 @@
+GET plans/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+
+
+GET plans/_search
+{
+  "query": {
+    "has_parent": {
+      "parent_type": "plan",
+      "query": {
+        "term": {
+          "objectId": "12xvxc345ssdsds-508"
+        }
+      }
+    }
+  }
+}
+
+
+GET plans/_search
+{
+  "query": {
+    "has_parent": {
+      "parent_type": "linkedPlanServices",
+      "query": {
+        "term": {
+          "objectId": "27283xvx9asdff-504"
+        }
+      }
+    }
+  }
+}
